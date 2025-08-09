@@ -12,7 +12,7 @@
 
 ```toml
 [dev-dependencies]
-mogimail = { git = "https://github.com/akar1ngo/mogimail.git" }
+mogimail = "0.1.0"
 ```
 
 ## 使い方

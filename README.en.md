@@ -12,7 +12,7 @@ Add the following to `Cargo.toml`.
 
 ```toml
 [dev-dependencies]
-mogimail = { git = "https://github.com/akar1ngo/mogimail.git" }
+mogimail = "0.1.0"
 ```
 
 ## Usage
