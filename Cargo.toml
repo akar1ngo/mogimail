@@ -3,6 +3,12 @@ name = "mogimail"
 version = "0.1.0"
 edition = "2024"
 
+description = "Embedded SMTP server"
+repository = "https://github.com/akar1ngo/mogimail"
+license = "MIT"
+keywords = ["mail", "smtp"]
+readme = "README.en.md"
+
 [dependencies]
 thiserror = "1"
 
