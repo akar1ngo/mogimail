@@ -1,0 +1,19 @@
+[package]
+name = "mogimail"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+thiserror = "1"
+
+[[bin]]
+name = "mogimail"
+path = "src/main.rs"
+
+[profile.release]
+lto = true
+strip = true
+
+[lib]
+name = "mogimail"
+path = "src/lib.rs"
