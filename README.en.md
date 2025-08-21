@@ -12,7 +12,7 @@ Add the following to `Cargo.toml`.
 
 ```toml
 [dev-dependencies]
-mogimail = "0.1.0"
+mogimail = "0.1.1"
 ```
 
 ## Usage
