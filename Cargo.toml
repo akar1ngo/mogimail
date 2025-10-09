@@ -9,8 +9,15 @@ license = "MIT"
 keywords = ["mail", "smtp"]
 readme = "README.en.md"
 
+[features]
+default = []
+ehlo = []
+
 [dependencies]
 thiserror = { version = "2", default-features = false }
+
+[dev-dependencies]
+lettre = "0.11"
 
 [[bin]]
 name = "mogimail"

@@ -187,6 +187,8 @@ impl SmtpSession {
     /// Check if the session is ready for a specific command
     pub fn can_execute_command(&self, command: &str) -> bool {
         match command.to_uppercase().as_str() {
+            #[cfg(feature = "ehlo")]
+            "EHLO" => true, // EHLO can be sent at any time
             "HELO" => true, // HELO can be sent at any time
             "MAIL" => self.state == SmtpState::GreetingReceived,
             "RCPT" => {

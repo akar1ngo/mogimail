@@ -427,4 +427,58 @@ mod tests {
         // Should not receive any more emails
         assert!(rx.recv_timeout(Duration::from_millis(50)).is_err());
     }
+
+    #[cfg(feature = "ehlo")]
+    #[test]
+    fn test_ehlo_command() {
+        let (addr, rx) = start_test_server();
+
+        // Connect to server
+        let mut stream = TcpStream::connect(&addr).unwrap();
+
+        // Read greeting
+        let mut reader = BufReader::new(stream.try_clone().unwrap());
+        let mut greeting = String::new();
+        reader.read_line(&mut greeting).unwrap();
+        assert!(greeting.starts_with("220"));
+
+        // Send EHLO
+        let response = send_command(&mut stream, "EHLO client.local").unwrap();
+        assert!(response.starts_with("250"));
+
+        // Send MAIL FROM
+        let response = send_command(&mut stream, "MAIL FROM:<test@example.com>").unwrap();
+        assert!(response.starts_with("250"));
+
+        // Send RCPT TO
+        let response = send_command(&mut stream, "RCPT TO:<recipient@example.com>").unwrap();
+        assert!(response.starts_with("250"));
+
+        // Send DATA
+        let response = send_command(&mut stream, "DATA").unwrap();
+        assert!(response.starts_with("354"));
+
+        // Send email content
+        writeln!(stream, "Subject: EHLO Test Email").unwrap();
+        writeln!(stream).unwrap();
+        writeln!(stream, "This is a test.").unwrap();
+        writeln!(stream, ".").unwrap();
+        stream.flush().unwrap();
+
+        // Read final response
+        let mut final_response = String::new();
+        reader.read_line(&mut final_response).unwrap();
+        assert!(final_response.starts_with("250"));
+
+        // Send QUIT
+        let response = send_command(&mut stream, "QUIT").unwrap();
+        assert!(response.starts_with("221"));
+
+        // Wait for email to be processed
+        let email = rx.recv_timeout(Duration::from_millis(100)).unwrap();
+        assert_eq!(email.from, "test@example.com");
+        assert_eq!(email.to, vec!["recipient@example.com"]);
+        assert!(email.data.contains("Subject: EHLO Test Email"));
+        assert!(email.data.contains("This is a test."));
+    }
 }

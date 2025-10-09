@@ -7,6 +7,8 @@ pub struct SmtpResponse {
     pub code: String,
     /// The human-readable message
     pub message: String,
+    /// Optional multiline messages for EHLO responses
+    pub multiline: Option<Vec<String>>,
 }
 
 impl SmtpResponse {
@@ -15,6 +17,16 @@ impl SmtpResponse {
         Self {
             code: code.to_string(),
             message: message.to_string(),
+            multiline: None,
+        }
+    }
+
+    /// Create a new multiline SMTP response
+    pub fn new_multiline(code: &str, message: &str, lines: Vec<String>) -> Self {
+        Self {
+            code: code.to_owned(),
+            message: message.to_owned(),
+            multiline: Some(lines),
         }
     }
 
@@ -31,6 +43,17 @@ impl SmtpResponse {
     /// Create a HELO response (250)
     pub fn helo(hostname: &str, client_domain: &str) -> Self {
         Self::new("250", &format!("{hostname} Hello {client_domain}"))
+    }
+
+    /// Create an EHLO response (250) with capabilities
+    #[cfg(feature = "ehlo")]
+    pub fn ehlo(hostname: &str, client_domain: &str) -> Self {
+        let capabilities = vec!["PIPELINING".to_owned(), "SIZE 10240000".to_owned()];
+        Self::new_multiline(
+            "250",
+            &format!("{hostname} Hello {client_domain}"),
+            capabilities,
+        )
     }
 
     /// Create a DATA intermediate response (354)
@@ -50,7 +73,20 @@ impl SmtpResponse {
 
     /// Format the response for sending over the wire
     pub fn format(&self) -> String {
-        format!("{} {}\r\n", self.code, self.message)
+        if let Some(ref lines) = self.multiline {
+            let mut result = format!("{}-{}\r\n", self.code, self.message);
+            for (i, line) in lines.iter().enumerate() {
+                if i == lines.len() - 1 {
+                    // Last line uses space instead of dash
+                    result.push_str(&format!("{} {}\r\n", self.code, line));
+                } else {
+                    result.push_str(&format!("{}-{}\r\n", self.code, line));
+                }
+            }
+            result
+        } else {
+            format!("{} {}\r\n", self.code, self.message)
+        }
     }
 
     /// Check if this is a success response (2xx)
@@ -96,6 +132,20 @@ mod tests {
         assert_eq!(response.message, "server.local Hello client.local");
     }
 
+    #[cfg(feature = "ehlo")]
+    #[test]
+    fn test_ehlo_response() {
+        let response = SmtpResponse::ehlo("server.local", "client.local");
+        assert_eq!(response.code, "250");
+        assert_eq!(response.message, "server.local Hello client.local");
+        assert!(response.multiline.is_some());
+
+        let formatted = response.format();
+        assert!(formatted.contains("250-server.local Hello client.local\r\n"));
+        assert!(formatted.contains("250-PIPELINING\r\n"));
+        assert!(formatted.contains("250 SIZE 10240000\r\n"));
+    }
+
     #[test]
     fn test_data_start_response() {
         let response = SmtpResponse::data_start();
@@ -121,6 +171,20 @@ mod tests {
     fn test_format() {
         let response = SmtpResponse::new("250", "OK");
         assert_eq!(response.format(), "250 OK\r\n");
+    }
+
+    #[test]
+    fn test_multiline_format() {
+        let response = SmtpResponse::new_multiline(
+            "250",
+            "Hello",
+            vec!["PIPELINING".to_owned(), "SIZE 1000".to_owned()],
+        );
+        let formatted = response.format();
+        assert_eq!(
+            formatted,
+            "250-Hello\r\n250-PIPELINING\r\n250 SIZE 1000\r\n"
+        );
     }
 
     #[test]
