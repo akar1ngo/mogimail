@@ -39,6 +39,10 @@
 //! - `NOOP` - Do nothing
 //! - `QUIT` - Close connection
 //!
+//! ## Additional Features
+//!
+//! Enabling the `ehlo` feature also allows you to use the `EHLO` command.
+//!
 //! ## Notes
 //!
 //! - Only the "minimal implementation" defined in RFC 821 is implemented.
