@@ -1,6 +1,6 @@
 [package]
 name = "mogimail"
-version = "0.1.1"
+version = "0.2.0"
 edition = "2024"
 
 description = "Embedded SMTP server"
@@ -9,8 +9,15 @@ license = "MIT"
 keywords = ["mail", "smtp"]
 readme = "README.en.md"
 
+[features]
+default = []
+ehlo = []
+
 [dependencies]
 thiserror = { version = "2", default-features = false }
+
+[dev-dependencies]
+lettre = "0.11"
 
 [[bin]]
 name = "mogimail"

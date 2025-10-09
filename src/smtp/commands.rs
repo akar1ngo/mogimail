@@ -37,6 +37,8 @@ impl<'a> SmtpCommandHandler<'a> {
         let cmd = parts[0].to_uppercase();
 
         match cmd.as_str() {
+            #[cfg(feature = "ehlo")]
+            "EHLO" => self.handle_ehlo(parts, session),
             "HELO" => self.handle_helo(parts, session),
             "MAIL" => self.handle_mail(parts, session),
             "RCPT" => self.handle_rcpt(parts, session),
@@ -64,6 +66,25 @@ impl<'a> SmtpCommandHandler<'a> {
         session.set_client_domain(client_domain.clone())?;
 
         Ok(SmtpResponse::helo(self.hostname, &client_domain))
+    }
+
+    /// Handle EHLO command (Extended HELO)
+    #[cfg(feature = "ehlo")]
+    fn handle_ehlo(
+        &self,
+        parts: Vec<&str>,
+        session: &mut SmtpSession,
+    ) -> Result<SmtpResponse, SmtpError> {
+        if parts.len() < 2 {
+            return Err(SmtpError::InvalidSyntax(
+                "EHLO requires domain argument".to_string(),
+            ));
+        }
+
+        let client_domain = parts[1].to_string();
+        session.set_client_domain(client_domain.clone())?;
+
+        Ok(SmtpResponse::ehlo(self.hostname, &client_domain))
     }
 
     /// Handle MAIL command
@@ -262,6 +283,32 @@ mod tests {
         assert_eq!(response.code, "250");
         assert_eq!(response.message, "test.local Hello client.local");
         assert_eq!(session.client_domain, Some("client.local".to_string()));
+    }
+
+    #[cfg(feature = "ehlo")]
+    #[test]
+    fn test_ehlo_command() {
+        let handler = create_handler();
+        let mut session = SmtpSession::new();
+
+        let response = handler
+            .process_command("EHLO client.local", &mut session)
+            .unwrap();
+
+        assert_eq!(response.code, "250");
+        assert_eq!(response.message, "test.local Hello client.local");
+        assert_eq!(session.client_domain, Some("client.local".to_string()));
+        assert!(response.multiline.is_some());
+    }
+
+    #[cfg(feature = "ehlo")]
+    #[test]
+    fn test_ehlo_missing_domain() {
+        let handler = create_handler();
+        let mut session = SmtpSession::new();
+
+        let result = handler.process_command("EHLO", &mut session);
+        assert!(result.is_err());
     }
 
     #[test]
