@@ -30,14 +30,18 @@
           src = craneLib.cleanCargoSource ./.;
           strictDeps = true;
 
-          buildInputs =
-            [
-              # Add additional build inputs here
-            ]
-            ++ pkgs.lib.optionals pkgs.stdenv.isDarwin [
-              # Additional darwin specific inputs can be set here
-              pkgs.libiconv
-            ];
+          buildInputs = [
+            # Add additional build inputs here
+            pkgs.openssl
+          ]
+          ++ pkgs.lib.optionals pkgs.stdenv.isDarwin [
+            # Additional darwin specific inputs can be set here
+            pkgs.libiconv
+          ];
+
+          nativeBuildInputs = [
+            pkgs.pkg-config
+          ];
         };
 
         # Build just the cargo dependencies, so we can reuse all of that work
