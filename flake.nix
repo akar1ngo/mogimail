@@ -65,6 +65,7 @@
           commonArgs
           // {
             inherit cargoArtifacts;
+            cargoExtraArgs = "--all-features --locked";
             # Additional environment variables or build phases/hooks can be set
             # here *without* rebuilding all dependency crates
             # MY_CUSTOM_VAR = "some value";
